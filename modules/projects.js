@@ -1,0 +1,77 @@
+var express = require('express')
+const fs = require('fs');
+var router = express.Router()
+const siteName = "Projects";
+
+function loadDefaultPicture(type){
+    if(type == "directory"){
+        return "https://s3.amazonaws.com/mikerkoval/website/core-images/clipart684867.png"
+    } else {
+        return "http://marlborofishandgame.com/images/6/6c/Question-mark.png"
+    }
+}
+function parseFile(path){
+    path += "/config.info";
+    var contents = fs.readFileSync(path,  'utf8');
+    contents = JSON.parse(contents);
+    if(!contents.picture) {
+        contents.picture = loadDefaultPicture(contents.type);
+    }
+    return contents;
+}
+
+function splitPath(path){
+    var arr = path.split("/");
+    var totalPath = "";
+    var retArray = []
+    for(var i = 0; i < arr.length-1; i++){
+        totalPath += "/" + arr[i];
+        retArray.push(totalPath);
+    }
+    return retArray;
+}
+
+function getProjects(path) {
+    var projects = [];
+    var files = fs.readdirSync(path);
+    for(var i = 0; i < files.length; i++){
+        filePath = path + files[i];
+        if(getPathType(filePath) != "directory") {
+            continue;
+        }
+        var fileData = parseFile(filePath);
+        projects.push(fileData);
+    }
+    return {path: path, projects : projects};
+}
+function getPathType(path) {
+    var obj = fs.lstatSync( path);
+    if(obj.isDirectory()){
+        return "directory";
+    } else if (obj.isFile()){
+        return "file";
+    } else {
+        return null;
+    }
+}
+
+router.use(function(req, res, next){
+    var path = req.path;
+    if(path[path.length-1] != "/") {
+        path+="/";
+    }
+    path = "projects" + path;
+    var pathType = getPathType(path);
+    if(pathType == "directory"){
+        var projects = getProjects(path);
+        res.render('projects', projects);
+    } else {
+        var data = {
+            titleHeader: siteName,
+            title:  "error"
+        }
+        res.status(404).render('error', data);
+    }
+});
+
+module.exports = router

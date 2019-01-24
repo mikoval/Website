@@ -1,0 +1,39 @@
+<style>
+h1{
+    margin:30px;
+    text-align:center;
+}
+
+h3{
+    margin:30px;
+}
+
+.card:hover{
+    background-color:lightblue;
+    cursor:pointer;
+}
+</style>
+
+<h1>WELCOME TO MY PROJECTS PAGE</h1>
+
+<div class="card-deck" style = "margin:30px">
+{{#each projects}}
+  <div class="card" style="max-width: 18rem;" name="{{this.name}}">
+    <img class="card-img-bottom" src="{{this.picture}}" alt="Card image cap" style="margin-top:10px">
+    <div class="card-body">
+      <h5 class="card-title" style="text-align:center">{{this.name}}</h5>
+    </div>
+  </div>
+{{/each}}
+
+<script>
+$(".card").on("click", function(){
+    var name = $(this).attr("name");
+    console.log(name);
+    window.location.href = "/{{path}}" +  name
+})
+</script>
+
+
+</div>
+
