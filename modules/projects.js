@@ -1,3 +1,4 @@
+var fork = require('child_process').fork;
 var express = require('express')
 const fs = require('fs');
 var router = express.Router()
@@ -10,8 +11,16 @@ function loadDefaultPicture(type){
         return "http://marlborofishandgame.com/images/6/6c/Question-mark.png"
     }
 }
-function parseFile(path){
-    path += "/config.info";
+function getDirectoryContents(path){
+    var obj = fs.lstatSync(path);
+    if(!obj.isDirectory()){
+        return null;
+    }
+
+    if(path[path.length-1] != "/") {
+        path+="/";
+    }
+    path += "config.info";
     var contents = fs.readFileSync(path,  'utf8');
     contents = JSON.parse(contents);
     if(!contents.picture) {
@@ -36,23 +45,12 @@ function getProjects(path) {
     var files = fs.readdirSync(path);
     for(var i = 0; i < files.length; i++){
         filePath = path + files[i];
-        if(getPathType(filePath) != "directory") {
-            continue;
+        var fileData = getDirectoryContents(filePath);
+        if(fileData) {
+            projects.push(fileData);
         }
-        var fileData = parseFile(filePath);
-        projects.push(fileData);
     }
     return {path: path, projects : projects};
-}
-function getPathType(path) {
-    var obj = fs.lstatSync( path);
-    if(obj.isDirectory()){
-        return "directory";
-    } else if (obj.isFile()){
-        return "file";
-    } else {
-        return null;
-    }
 }
 
 router.use(function(req, res, next){
@@ -61,10 +59,19 @@ router.use(function(req, res, next){
         path+="/";
     }
     path = "projects" + path;
-    var pathType = getPathType(path);
+    var pathContents = getDirectoryContents(path);
+    var pathType = pathContents.type;
+    console.log(pathType);
     if(pathType == "directory"){
         var projects = getProjects(path);
         res.render('projects', projects);
+    } else if(pathType == "node-app") {
+        console.log("DIRECTING TO " + pathContents.url);
+        //res.writeHead(302, { 'Location': pathContents.url });
+
+        res.status(301).redirect(pathContents.url);
+
+        res.end();
     } else {
         var data = {
             titleHeader: siteName,
