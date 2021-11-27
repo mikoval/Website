@@ -10,9 +10,11 @@ while read p; do
     strArr=($p)
     printf "STARTING: %s on port %d \n" ${strArr[0]} ${strArr[1]}
     pushd ${strArr[0]}
-    nohup npm start ${strArr[1]} &
+    export PORT=${strArr[1]}
+    nohup npm start --PORT=${strArr[1]} &
     popd
 
 done < ${PORTS_FILE}
 
-nodemon
+#nodemon
+node index.js
